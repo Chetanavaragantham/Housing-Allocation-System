@@ -1,0 +1,15 @@
+# Environment variables - never commit secrets
+.env
+
+# Virtual environment
+venv/
+
+# Python bytecode
+__pycache__/
+*.pyc
+
+# VS Code settings
+.vscode/
+
+# Logs
+*.log
