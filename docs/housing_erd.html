@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Housing Allocation System — ERD</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
+
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --surface2: #21262d;
+    --border: #30363d;
+    --text: #e6edf3;
+    --muted: #7d8590;
+    --pk: #f78166;
+    --fk: #ffa657;
+    --col: #79c0ff;
+    --type: #7ee787;
+    --students: #388bfd;
+    --preferences: #bc8cff;
+    --rooms: #3dc9b0;
+    --allocations: #f78166;
+    --requests: #ffa657;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'IBM Plex Sans', sans-serif;
+    min-height: 100vh;
+    padding: 32px 24px;
+    overflow-x: auto;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 40px;
+  }
+
+  .header-tag {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 12px;
+  }
+
+  h1 {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 8px;
+  }
+
+  .subtitle {
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  /* LEGEND */
+  .legend {
+    display: flex;
+    justify-content: center;
+    gap: 24px;
+    margin-bottom: 40px;
+    flex-wrap: wrap;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  .legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+  }
+
+  /* ERD CANVAS */
+  .erd-canvas {
+    position: relative;
+    width: 100%;
+    min-height: 800px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  svg.relations {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    overflow: visible;
+  }
+
+  /* TABLE CARDS */
+  .table-card {
+    position: absolute;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    width: 240px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.4);
+  }
+
+  .table-header {
+    padding: 10px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .table-header .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .table-body {
+    border-top: 1px solid var(--border);
+  }
+
+  .col-row {
+    display: grid;
+    grid-template-columns: 16px 1fr auto;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 14px;
+    border-bottom: 1px solid rgba(48,54,61,0.5);
+  }
+
+  .col-row:last-child { border-bottom: none; }
+
+  .col-row:hover { background: var(--surface2); }
+
+  .col-key {
+    font-size: 9px;
+    font-weight: 600;
+    text-align: center;
+  }
+
+  .pk { color: var(--pk); }
+  .fk { color: var(--fk); }
+
+  .col-name { color: var(--col); font-size: 11px; }
+  .col-type { color: var(--type); font-size: 10px; opacity: 0.8; }
+
+  .col-divider {
+    height: 1px;
+    background: var(--border);
+    margin: 2px 0;
+  }
+
+  /* POSITIONS */
+  #t-students      { top: 280px; left: 20px; }
+  #t-preferences   { top: 520px; left: 20px; }
+  #t-rooms         { top: 60px; left: 480px; }
+  #t-allocations   { top: 340px; left: 480px; }
+  #t-requests      { top: 200px; left: 900px; }
+
+  /* RELATIONSHIP LABELS */
+  .rel-label {
+    position: absolute;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    background: var(--bg);
+    padding: 2px 6px;
+    border-radius: 3px;
+    white-space: nowrap;
+    pointer-events: none;
+  }
+
+  @media (max-width: 900px) {
+    .erd-canvas { min-height: 1400px; }
+    #t-students      { top: 20px; left: 20px; }
+    #t-preferences   { top: 340px; left: 20px; }
+    #t-rooms         { top: 20px; left: 280px; }
+    #t-allocations   { top: 660px; left: 20px; }
+    #t-requests      { top: 660px; left: 280px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-tag">Entity Relationship Diagram · v1.0</div>
+  <h1>Housing Allocation System</h1>
+  <p class="subtitle">5 tables · 6 relationships · PostgreSQL</p>
+</header>
+
+<div class="legend">
+  <div class="legend-item"><div class="legend-dot" style="background:#f78166"></div> PK — Primary Key</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#ffa657"></div> FK — Foreign Key</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#79c0ff"></div> Column</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#7ee787"></div> Data Type</div>
+</div>
+
+<div class="erd-canvas" id="canvas">
+
+  <!-- SVG RELATIONS -->
+  <svg class="relations" id="svg-relations"></svg>
+
+  <!-- STUDENTS TABLE -->
+  <div class="table-card" id="t-students">
+    <div class="table-header" style="background:rgba(56,139,253,0.12); color:#388bfd;">
+      <div class="dot" style="background:#388bfd"></div>
+      students
+    </div>
+    <div class="table-body">
+      <div class="col-row"><span class="col-key pk">PK</span><span class="col-name">id</span><span class="col-type">integer</span></div>
+      <div class="col-row"><span class="col-key"></span><span class="col-name">student_id</span><span class="col-type">varchar</span></div>
+      <div class="col-row"><span class="col-key"></span><span class="col-name">first_name</span><span class="col-type">varchar</span></div>
+      <div class="col-row"><span class="col-key"></span><span class="col-name">last_name</span><span class="col-type">varchar</span></div>
+      <div class="col-row"><span class="col-key"></span><span class="col-name">email</span><span class="col-type">varchar</span></div>
+      <div class="col-row"><span class="col-key"></span><span class="col-name">phone_number</span><span class="col-type">varchar</span></div>
+      <div class="col-row"><span class="col-key"></span><span class="col-name">date_of_birth</span><span class="col-type">date</span></div>
+      <div class="col-row"><span class="col-key"></span><span class="col-name">gender</span><span class="col-type">enum</span></div>
+      <div class="col-row"><span class="col-key"></span><span class="col-name">intake_date</span><span class="col-type">date</span></div>
+      <div class="col-row"><span class="col-key"></span><span class="col-name">is_allocated</span><span class="col-type">boolean</span></div>
+      <div class="col-row"><span class="col-key"></span><span class="col-name">created_at</span><span class="col-type">timestamp</span></div>
+      <div class="col-row"><span class="col-key"></span><span class="col-name">updated_at</span><span class="col-type">timestamp</span></div>
+    </div>
+  </div>
+
+  <!-- STUDENT PREFERENCES TABLE -->
+  <div class="table-card" id="t-preferences">
+    <div class="table-header" style="background:rgba(188,140,255,0.12); color:#bc8cff;">
+      <div class="dot" style="background:#bc8cff"></div>
+      student_preferences
+    </div>
+    <div class="table-body">
+      <div class="col-row"><span class="col-key pk">PK</span><span class="col-name">id</span><span class="col-type">integer</span></div>
+      <div class="col-row"><span class="col-key fk">FK</span><span class="col-name">student_id</span><span class="col-type">integer</span></div>
+      <div class="col-row"><span class="col-key fk">FK</span><span class="col-name">requested_roommate_id</span><span class="col-type">integer</span></div>
+      <div class="col-row"><span class="col-key"></span><span class="col-name">sleep_schedule</span><span class="col-type">enum</span></div>
+      <div class="col-row"><span class="col-key"></span><span class="col-name">noise_tolerance</span><span class="col-type">integer</span></div>
+      <div class="col-row"><span class="col-key"></span><span class="col-name">cleanliness</span><span class="col-type">integer</span></div>
+      <div class="col-row"><span class="col-key"></span><span class="col-name">study_habits</span><span class="col-type">enum</span></div>
+      <div class="col-row"><span class="col-key"></span><span class="col-name">diet</span><span class="col-type">enum</span></div>
+      <div class="col-row"><span class="col-key"></span><span class="col-name">created_at</span><span class="col-type">timestamp</span></div>
+      <div class="col-row"><span class="col-key"></span><span class="col-name">updated_at</span><span class="col-type">timestamp</span></div>
+    </div>
+  </div>
+
+  <!-- ROOMS TABLE -->
+  <div class="table-card" id="t-rooms">
+    <div class="table-header" style="background:rgba(61,201,176,0.12); color:#3dc9b0;">
+      <div class="dot" style="background:#3dc9b0"></div>
+      rooms
+    </div>
+    <div class="table-body">
+      <div class="col-row"><span class="col-key pk">PK</span><span class="col-name">id</span><span class="col-type">integer</span></div>
+      <div class="col-row"><span class="col-key"></span><span class="col-name">room_number</span><span class="col-type">varchar</span></div>
+      <div class="col-row"><span class="col-key"></span><span class="col-name">building</span><span class="col-type">enum</span></div>
+      <div class="col-row"><span class="col-key"></span><span class="col-name">apartment_number</span><span class="col-type">varchar</span></div>
+      <div class="col-row"><span class="col-key"></span><span class="col-name">room_type</span><span class="col-type">enum</span></div>
+      <div class="col-row"><span class="col-key"></span><span class="col-name">is_occupied</span><span class="col-type">boolean</span></div>
+      <div class="col-row"><span class="col-key"></span><span class="col-name">is_rent_ready</span><span class="col-type">boolean</span></div>
+      <div class="col-row"><span class="col-key"></span><span class="col-name">room_issues</span><span class="col-type">text</span></div>
+      <div class="col-row"><span class="col-key"></span><span class="col-name">maintenance_status</span><span class="col-type">enum</span></div>
+      <div class="col-row"><span class="col-key"></span><span class="col-name">created_at</span><span class="col-type">timestamp</span></div>
+      <div class="col-row"><span class="col-key"></span><span class="col-name">updated_at</span><span class="col-type">timestamp</span></div>
+    </div>
+  </div>
+
+  <!-- ALLOCATIONS TABLE -->
+  <div class="table-card" id="t-allocations">
+    <div class="table-header" style="background:rgba(247,129,102,0.12); color:#f78166;">
+      <div class="dot" style="background:#f78166"></div>
+      allocations
+    </div>
+    <div class="table-body">
+      <div class="col-row"><span class="col-key pk">PK</span><span class="col-name">id</span><span class="col-type">integer</span></div>
+      <div class="col-row"><span class="col-key fk">FK</span><span class="col-name">student_id</span><span class="col-type">integer</span></div>
+      <div class="col-row"><span class="col-key fk">FK</span><span class="col-name">room_id</span><span class="col-type">integer</span></div>
+      <div class="col-row"><span class="col-key"></span><span class="col-name">status</span><span class="col-type">enum</span></div>
+      <div class="col-row"><span class="col-key"></span><span class="col-name">compatibility_score</span><span class="col-type">float</span></div>
+      <div class="col-row"><span class="col-key"></span><span class="col-name">is_reallocated</span><span class="col-type">boolean</span></div>
+      <div class="col-row"><span class="col-key"></span><span class="col-name">allocated_at</span><span class="col-type">timestamp</span></div>
+      <div class="col-row"><span class="col-key"></span><span class="col-name">created_at</span><span class="col-type">timestamp</span></div>
+      <div class="col-row"><span class="col-key"></span><span class="col-name">updated_at</span><span class="col-type">timestamp</span></div>
+    </div>
+  </div>
+
+  <!-- REQUESTS TABLE -->
+  <div class="table-card" id="t-requests">
+    <div class="table-header" style="background:rgba(255,166,87,0.12); color:#ffa657;">
+      <div class="dot" style="background:#ffa657"></div>
+      requests
+    </div>
+    <div class="table-body">
+      <div class="col-row"><span class="col-key pk">PK</span><span class="col-name">id</span><span class="col-type">integer</span></div>
+      <div class="col-row"><span class="col-key fk">FK</span><span class="col-name">student_id</span><span class="col-type">integer</span></div>
+      <div class="col-row"><span class="col-key fk">FK</span><span class="col-name">requested_roommate_1</span><span class="col-type">integer</span></div>
+      <div class="col-row"><span class="col-key fk">FK</span><span class="col-name">requested_roommate_2</span><span class="col-type">integer</span></div>
+      <div class="col-row"><span class="col-key fk">FK</span><span class="col-name">requested_roommate_3</span><span class="col-type">integer</span></div>
+      <div class="col-row"><span class="col-key"></span><span class="col-name">request_type</span><span class="col-type">enum</span></div>
+      <div class="col-row"><span class="col-key"></span><span class="col-name">status</span><span class="col-type">enum</span></div>
+      <div class="col-row"><span class="col-key"></span><span class="col-name">rejection_reason</span><span class="col-type">text</span></div>
+      <div class="col-row"><span class="col-key"></span><span class="col-name">outcome_notes</span><span class="col-type">text</span></div>
+      <div class="col-row"><span class="col-key"></span><span class="col-name">submitted_at</span><span class="col-type">timestamp</span></div>
+      <div class="col-row"><span class="col-key"></span><span class="col-name">processed_at</span><span class="col-type">timestamp</span></div>
+      <div class="col-row"><span class="col-key"></span><span class="col-name">created_at</span><span class="col-type">timestamp</span></div>
+      <div class="col-row"><span class="col-key"></span><span class="col-name">updated_at</span><span class="col-type">timestamp</span></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  function getCenter(el, canvas) {
+    const cr = canvas.getBoundingClientRect();
+    const er = el.getBoundingClientRect();
+    return {
+      x: er.left - cr.left + er.width / 2,
+      y: er.top - cr.top + er.height / 2,
+      top: er.top - cr.top,
+      bottom: er.top - cr.top + er.height,
+      left: er.left - cr.left,
+      right: er.left - cr.left + er.width,
+    };
+  }
+
+  function getEdgePoint(rect, target) {
+    const cx = rect.left + (rect.right - rect.left) / 2;
+    const cy = rect.top + (rect.bottom - rect.top) / 2;
+    const tx = target.left + (target.right - target.left) / 2;
+    const ty = target.top + (target.bottom - target.top) / 2;
+    const dx = tx - cx;
+    const dy = ty - cy;
+    const w = (rect.right - rect.left) / 2;
+    const h = (rect.bottom - rect.top) / 2;
+    const absDx = Math.abs(dx);
+    const absDy = Math.abs(dy);
+    let ex, ey;
+    if (absDx / w > absDy / h) {
+      ex = dx > 0 ? rect.right : rect.left;
+      ey = cy + dy * (w / absDx);
+    } else {
+      ey = dy > 0 ? rect.bottom : rect.top;
+      ex = cx + dx * (h / absDy);
+    }
+    return { x: ex, y: ey };
+  }
+
+  function drawRelation(svg, fromEl, toEl, canvas, color, label, fromSide, toSide) {
+    const cr = canvas.getBoundingClientRect();
+
+    function elRect(el) {
+      const r = el.getBoundingClientRect();
+      return {
+        top: r.top - cr.top,
+        bottom: r.bottom - cr.top,
+        left: r.left - cr.left,
+        right: r.right - cr.left
+      };
+    }
+
+    const fr = elRect(fromEl);
+    const tr = elRect(toEl);
+    const fp = getEdgePoint(fr, tr);
+    const tp = getEdgePoint(tr, fr);
+
+    const mx = (fp.x + tp.x) / 2;
+    const my = (fp.y + tp.y) / 2;
+    const dx = tp.x - fp.x;
+    const dy = tp.y - fp.y;
+    const cx1 = fp.x + dx * 0.5;
+    const cy1 = fp.y;
+    const cx2 = tp.x - dx * 0.5;
+    const cy2 = tp.y;
+
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('d', `M ${fp.x} ${fp.y} C ${cx1} ${cy1}, ${cx2} ${cy2}, ${tp.x} ${tp.y}`);
+    path.setAttribute('stroke', color);
+    path.setAttribute('stroke-width', '1.5');
+    path.setAttribute('fill', 'none');
+    path.setAttribute('stroke-dasharray', '4 3');
+    path.setAttribute('opacity', '0.6');
+    svg.appendChild(path);
+
+    // endpoint dots
+    [fp, tp].forEach(p => {
+      const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      circle.setAttribute('cx', p.x);
+      circle.setAttribute('cy', p.y);
+      circle.setAttribute('r', '3');
+      circle.setAttribute('fill', color);
+      circle.setAttribute('opacity', '0.8');
+      svg.appendChild(circle);
+    });
+
+    // label
+    const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    text.setAttribute('x', mx);
+    text.setAttribute('y', my - 6);
+    text.setAttribute('text-anchor', 'middle');
+    text.setAttribute('font-family', 'IBM Plex Mono, monospace');
+    text.setAttribute('font-size', '10');
+    text.setAttribute('fill', color);
+    text.setAttribute('opacity', '0.9');
+
+    const bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    const padding = 4;
+    text.textContent = label;
+    svg.appendChild(text);
+    const bbox = text.getBBox();
+    bg.setAttribute('x', bbox.x - padding);
+    bg.setAttribute('y', bbox.y - padding/2);
+    bg.setAttribute('width', bbox.width + padding*2);
+    bg.setAttribute('height', bbox.height + padding);
+    bg.setAttribute('fill', '#0d1117');
+    bg.setAttribute('rx', '3');
+    svg.insertBefore(bg, text);
+  }
+
+  window.addEventListener('load', () => {
+    setTimeout(() => {
+      const canvas = document.getElementById('canvas');
+      const svg = document.getElementById('svg-relations');
+      svg.setAttribute('viewBox', `0 0 ${canvas.offsetWidth} ${canvas.offsetHeight}`);
+
+      const students = document.getElementById('t-students');
+      const preferences = document.getElementById('t-preferences');
+      const rooms = document.getElementById('t-rooms');
+      const allocations = document.getElementById('t-allocations');
+      const requests = document.getElementById('t-requests');
+
+      drawRelation(svg, students, preferences, canvas, '#bc8cff', '1:1');
+      drawRelation(svg, students, allocations, canvas, '#f78166', '1:1');
+      drawRelation(svg, rooms, allocations, canvas, '#3dc9b0', '1:1');
+      drawRelation(svg, students, requests, canvas, '#ffa657', '1:N');
+      drawRelation(svg, preferences, students, canvas, '#388bfd', 'self-ref');
+      drawRelation(svg, requests, students, canvas, '#ffa657', 'FK×3');
+    }, 100);
+  });
+</script>
+</body>
+</html>
