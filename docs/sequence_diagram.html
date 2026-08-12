@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Housing Allocation System — Sequence Diagram</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
+
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --surface2: #21262d;
+    --border: #30363d;
+    --text: #e6edf3;
+    --muted: #7d8590;
+    --student:    #388bfd;
+    --fastapi:    #3dc9b0;
+    --db:         #58a6ff;
+    --agent:      #bc8cff;
+    --gemini:     #ffa657;
+    --langsmith:  #7ee787;
+    --notify:     #ffd166;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'IBM Plex Sans', sans-serif;
+    padding: 32px 16px;
+    overflow-x: auto;
+  }
+
+  header { text-align:center; margin-bottom:32px; }
+  .tag { font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.2em; text-transform:uppercase; color:var(--muted); margin-bottom:10px; }
+  h1 { font-family:'IBM Plex Mono',monospace; font-size:20px; font-weight:600; margin-bottom:6px; }
+  .subtitle { font-size:13px; color:var(--muted); }
+
+  /* SEQUENCE CONTAINER */
+  .seq-wrap { overflow-x:auto; }
+  .seq {
+    min-width: 900px;
+    max-width: 1100px;
+    margin: 0 auto;
+    position: relative;
+  }
+
+  /* ACTORS ROW */
+  .actors {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 0;
+    margin-bottom: 0;
+  }
+
+  .actor {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .actor-box {
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    text-align: center;
+    border: 1px solid;
+    width: 100%;
+    max-width: 120px;
+  }
+
+  .actor-line {
+    width: 2px;
+    background: var(--border);
+    flex: 1;
+  }
+
+  /* STEPS */
+  .steps {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+  }
+
+  /* LIFELINES */
+  .lifelines {
+    position: absolute;
+    top: 0; bottom: 0; left: 0; right: 0;
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    pointer-events: none;
+  }
+
+  .lifeline {
+    display: flex;
+    justify-content: center;
+  }
+
+  .lifeline-line {
+    width: 2px;
+    background: var(--border);
+    opacity: 0.5;
+    height: 100%;
+  }
+
+  /* MESSAGE ROWS */
+  .msg-block {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    align-items: center;
+    min-height: 48px;
+    position: relative;
+  }
+
+  .msg-block:hover { background: rgba(255,255,255,0.02); }
+
+  /* STEP LABEL */
+  .step-num {
+    position: absolute;
+    left: -44px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 2px 6px;
+    white-space: nowrap;
+  }
+
+  /* ACTIVATION BOX */
+  .activation {
+    position: absolute;
+    width: 10px;
+    border-radius: 2px;
+    top: 0; bottom: 0;
+    transform: translateX(-50%);
+  }
+
+  /* ARROW */
+  .arrow-msg {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+  }
+
+  .arrow-line-h {
+    height: 2px;
+    flex: 1;
+  }
+
+  .arrow-head-r {
+    width: 0; height: 0;
+    border-top: 5px solid transparent;
+    border-bottom: 5px solid transparent;
+    border-left: 8px solid;
+    flex-shrink: 0;
+  }
+
+  .arrow-head-l {
+    width: 0; height: 0;
+    border-top: 5px solid transparent;
+    border-bottom: 5px solid transparent;
+    border-right: 8px solid;
+    flex-shrink: 0;
+  }
+
+  .arrow-text {
+    position: absolute;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    white-space: nowrap;
+    top: -16px;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  .arrow-return {
+    border-top: 2px dashed !important;
+    background: transparent !important;
+  }
+
+  /* SECTION LABEL */
+  .section-label {
+    grid-column: 1 / -1;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    background: var(--surface2);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    padding: 6px 12px;
+    margin: 4px 0;
+  }
+
+  /* NOTE BOX */
+  .note-box {
+    position: absolute;
+    background: rgba(255,209,102,0.08);
+    border: 1px solid rgba(255,209,102,0.3);
+    border-radius: 6px;
+    padding: 5px 10px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--notify);
+    white-space: nowrap;
+    top: 50%;
+    transform: translateY(-50%);
+  }
+
+  /* WRAPPER FOR RELATIVE POSITIONING */
+  .seq-inner {
+    position: relative;
+    padding-left: 50px;
+  }
+
+  /* SVG OVERLAY */
+  svg.overlay {
+    position: absolute;
+    top: 0; left: 50px; right: 0; bottom: 0;
+    width: calc(100% - 50px);
+    pointer-events: none;
+    overflow: visible;
+  }
+
+  /* PHASE BANDS */
+  .phase-band {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 0 4px;
+  }
+
+  .phase-line { flex:1; height:1px; background:var(--border); }
+  .phase-label {
+    font-family:'IBM Plex Mono',monospace;
+    font-size:10px; letter-spacing:0.12em;
+    text-transform:uppercase; color:var(--muted);
+    white-space:nowrap;
+  }
+
+  /* MANUAL TABLE APPROACH */
+  table.seq-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 860px;
+  }
+
+  .col-student    { width:13%; }
+  .col-fastapi    { width:13%; }
+  .col-db         { width:13%; }
+  .col-agent      { width:13%; }
+  .col-gemini     { width:13%; }
+  .col-langsmith  { width:13%; }
+  .col-notify     { width:13%; }
+
+  td { height: 52px; position:relative; vertical-align:middle; }
+
+  .ll { /* lifeline cell */
+    border-left: 2px solid rgba(48,54,61,0.6);
+  }
+
+  .ll-active {
+    border-left: 2px solid rgba(124,111,255,0.4);
+    background: rgba(124,111,255,0.02);
+  }
+
+  /* ARROW ROWS */
+  .arr-row td { height: 52px; }
+
+  .arr-cell {
+    position: relative;
+  }
+
+  /* inline SVG arrows */
+  .arr-svg {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    overflow: visible;
+  }
+
+  .phase-row td {
+    background: var(--surface2);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    padding: 6px 0;
+  }
+
+  .phase-row-label {
+    grid-column: 1/-1;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="tag">Sequence Diagram · v1.0</div>
+  <h1>Housing Application — End to End Flow</h1>
+  <p class="subtitle">Scenario: Student submits housing application → Agent allocates room</p>
+</header>
+
+<div class="seq-wrap">
+<div class="seq" style="max-width:1060px; margin:0 auto; padding-left:40px; position:relative;">
+
+<!-- ACTOR HEADERS -->
+<div style="display:grid; grid-template-columns:repeat(7,1fr); gap:4px; margin-bottom:0; padding-left:0;">
+
+  <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
+    <div class="actor-box" style="background:rgba(56,139,253,0.1);border-color:rgba(56,139,253,0.4);color:var(--student);">👤<br>Student</div>
+  </div>
+  <div style="display:flex;flex-direction:column;align-items:center;">
+    <div class="actor-box" style="background:rgba(61,201,176,0.1);border-color:rgba(61,201,176,0.4);color:var(--fastapi);">🚀<br>FastAPI</div>
+  </div>
+  <div style="display:flex;flex-direction:column;align-items:center;">
+    <div class="actor-box" style="background:rgba(88,166,255,0.1);border-color:rgba(88,166,255,0.4);color:var(--db);">🐘<br>PostgreSQL</div>
+  </div>
+  <div style="display:flex;flex-direction:column;align-items:center;">
+    <div class="actor-box" style="background:rgba(188,140,255,0.1);border-color:rgba(188,140,255,0.4);color:var(--agent);">🧠<br>LangGraph</div>
+  </div>
+  <div style="display:flex;flex-direction:column;align-items:center;">
+    <div class="actor-box" style="background:rgba(255,166,87,0.1);border-color:rgba(255,166,87,0.4);color:var(--gemini);">✨<br>Gemini</div>
+  </div>
+  <div style="display:flex;flex-direction:column;align-items:center;">
+    <div class="actor-box" style="background:rgba(126,231,135,0.1);border-color:rgba(126,231,135,0.4);color:var(--langsmith);">🔍<br>LangSmith</div>
+  </div>
+  <div style="display:flex;flex-direction:column;align-items:center;">
+    <div class="actor-box" style="background:rgba(255,209,102,0.1);border-color:rgba(255,209,102,0.4);color:var(--notify);">📧<br>Notifier</div>
+  </div>
+
+</div>
+
+<!-- SEQUENCE SVG -->
+<svg viewBox="0 0 1020 1200" xmlns="http://www.w3.org/2000/svg" style="width:100%;font-family:'IBM Plex Mono',monospace;">
+
+  <!-- LIFELINES -->
+  <line x1="73"  y1="0" x2="73"  y2="1200" stroke="#30363d" stroke-width="1.5" stroke-dasharray="4 3"/>
+  <line x1="219" y1="0" x2="219" y2="1200" stroke="#30363d" stroke-width="1.5" stroke-dasharray="4 3"/>
+  <line x1="365" y1="0" x2="365" y2="1200" stroke="#30363d" stroke-width="1.5" stroke-dasharray="4 3"/>
+  <line x1="511" y1="0" x2="511" y2="1200" stroke="#30363d" stroke-width="1.5" stroke-dasharray="4 3"/>
+  <line x1="657" y1="0" x2="657" y2="1200" stroke="#30363d" stroke-width="1.5" stroke-dasharray="4 3"/>
+  <line x1="803" y1="0" x2="803" y2="1200" stroke="#30363d" stroke-width="1.5" stroke-dasharray="4 3"/>
+  <line x1="949" y1="0" x2="949" y2="1200" stroke="#30363d" stroke-width="1.5" stroke-dasharray="4 3"/>
+
+  <!-- PHASE 1: SUBMISSION -->
+  <rect x="0" y="10" width="1020" height="22" fill="#21262d"/>
+  <text x="510" y="25" text-anchor="middle" font-size="10" fill="#7d8590" letter-spacing="2">PHASE 1 — STUDENT SUBMISSION</text>
+
+  <!-- Step 1: POST /requests -->
+  <line x1="73" y1="52" x2="215" y2="52" stroke="#3dc9b0" stroke-width="1.5" marker-end="url(#arr-fastapi)"/>
+  <text x="144" y="46" text-anchor="middle" font-size="10" fill="#3dc9b0">POST /api/v1/requests</text>
+  <text x="40" y="56" text-anchor="middle" font-size="9" fill="#7d8590">①</text>
+
+  <!-- Step 2: Validate Pydantic -->
+  <rect x="204" y="60" width="30" height="20" rx="3" fill="rgba(61,201,176,0.15)" stroke="rgba(61,201,176,0.4)" stroke-width="1"/>
+  <text x="219" y="74" text-anchor="middle" font-size="9" fill="#3dc9b0">validate</text>
+  <text x="40" y="74" text-anchor="middle" font-size="9" fill="#7d8590">②</text>
+
+  <!-- Step 3: INSERT request -->
+  <line x1="219" y1="92" x2="361" y2="92" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#arr-db)"/>
+  <text x="290" y="86" text-anchor="middle" font-size="10" fill="#58a6ff">INSERT request record</text>
+  <text x="40" y="96" text-anchor="middle" font-size="9" fill="#7d8590">③</text>
+
+  <!-- Step 4: DB returns request_id -->
+  <line x1="361" y1="112" x2="223" y2="112" stroke="#58a6ff" stroke-width="1.5" stroke-dasharray="4 2" marker-end="url(#arr-db-r)"/>
+  <text x="290" y="107" text-anchor="middle" font-size="10" fill="#7d8590">request_id: 45</text>
+  <text x="40" y="116" text-anchor="middle" font-size="9" fill="#7d8590">④</text>
+
+  <!-- Step 5: 201 response to student -->
+  <line x1="215" y1="132" x2="77" y2="132" stroke="#3dc9b0" stroke-width="1.5" stroke-dasharray="4 2" marker-end="url(#arr-fastapi-r)"/>
+  <text x="144" y="127" text-anchor="middle" font-size="10" fill="#7d8590">201 Created — request_id: 45</text>
+  <text x="40" y="136" text-anchor="middle" font-size="9" fill="#7d8590">⑤</text>
+
+  <!-- PHASE 2: AGENT TRIGGER -->
+  <rect x="0" y="150" width="1020" height="22" fill="#21262d"/>
+  <text x="510" y="165" text-anchor="middle" font-size="10" fill="#7d8590" letter-spacing="2">PHASE 2 — AGENT TRIGGERED</text>
+
+  <!-- Step 6: Staff triggers agent -->
+  <line x1="73" y1="192" x2="215" y2="192" stroke="#3dc9b0" stroke-width="1.5" marker-end="url(#arr-fastapi)"/>
+  <text x="144" y="186" text-anchor="middle" font-size="10" fill="#3dc9b0">POST /api/v1/agent/run</text>
+  <text x="40" y="196" text-anchor="middle" font-size="9" fill="#7d8590">⑥</text>
+
+  <!-- Step 7: FastAPI triggers LangGraph -->
+  <line x1="219" y1="212" x2="507" y2="212" stroke="#bc8cff" stroke-width="1.5" marker-end="url(#arr-agent)"/>
+  <text x="363" y="206" text-anchor="middle" font-size="10" fill="#bc8cff">trigger agent run</text>
+  <text x="40" y="216" text-anchor="middle" font-size="9" fill="#7d8590">⑦</text>
+
+  <!-- Step 8: LangSmith starts tracing -->
+  <line x1="511" y1="232" x2="799" y2="232" stroke="#7ee787" stroke-width="1.5" stroke-dasharray="3 2" marker-end="url(#arr-ls)"/>
+  <text x="655" y="226" text-anchor="middle" font-size="10" fill="#7ee787">start trace session</text>
+  <text x="40" y="236" text-anchor="middle" font-size="9" fill="#7d8590">⑧</text>
+
+  <!-- PHASE 3: HOUSEKEEPING -->
+  <rect x="0" y="252" width="1020" height="22" fill="#21262d"/>
+  <text x="510" y="267" text-anchor="middle" font-size="10" fill="#7d8590" letter-spacing="2">PHASE 3 — HOUSEKEEPING</text>
+
+  <!-- Step 9: Load queue -->
+  <line x1="511" y1="294" x2="369" y2="294" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#arr-db-r)"/>
+  <text x="440" y="288" text-anchor="middle" font-size="10" fill="#58a6ff">load pending + unresolved requests</text>
+  <text x="40" y="298" text-anchor="middle" font-size="9" fill="#7d8590">⑨</text>
+
+  <!-- Step 10: DB returns queue -->
+  <line x1="369" y1="314" x2="507" y2="314" stroke="#58a6ff" stroke-width="1.5" stroke-dasharray="4 2" marker-end="url(#arr-agent-l)"/>
+  <text x="440" y="308" text-anchor="middle" font-size="10" fill="#7d8590">queue: [request_45, ...]</text>
+  <text x="40" y="318" text-anchor="middle" font-size="9" fill="#7d8590">⑩</text>
+
+  <!-- PHASE 4: ROOMMATE CHECK -->
+  <rect x="0" y="334" width="1020" height="22" fill="#21262d"/>
+  <text x="510" y="349" text-anchor="middle" font-size="10" fill="#7d8590" letter-spacing="2">PHASE 4 — ROOMMATE CHECK</text>
+
+  <!-- Step 11: Check roommate requests -->
+  <line x1="511" y1="376" x2="369" y2="376" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#arr-db-r)"/>
+  <text x="440" y="370" text-anchor="middle" font-size="10" fill="#58a6ff">check roommate requests for STU001</text>
+  <text x="40" y="380" text-anchor="middle" font-size="9" fill="#7d8590">⑪</text>
+
+  <!-- Step 12: No mutual request found -->
+  <line x1="369" y1="396" x2="507" y2="396" stroke="#58a6ff" stroke-width="1.5" stroke-dasharray="4 2" marker-end="url(#arr-agent-l)"/>
+  <text x="440" y="390" text-anchor="middle" font-size="10" fill="#7d8590">no mutual request found</text>
+  <text x="40" y="400" text-anchor="middle" font-size="9" fill="#7d8590">⑫</text>
+
+  <!-- PHASE 5: GEMINI REASONING -->
+  <rect x="0" y="416" width="1020" height="22" fill="#21262d"/>
+  <text x="510" y="431" text-anchor="middle" font-size="10" fill="#7d8590" letter-spacing="2">PHASE 5 — GEMINI REASONING</text>
+
+  <!-- Step 13: Agent calls Gemini -->
+  <line x1="511" y1="458" x2="653" y2="458" stroke="#ffa657" stroke-width="1.5" marker-end="url(#arr-gemini)"/>
+  <text x="582" y="452" text-anchor="middle" font-size="10" fill="#ffa657">reason: profile + available rooms</text>
+  <text x="40" y="462" text-anchor="middle" font-size="9" fill="#7d8590">⑬</text>
+
+  <!-- Step 14: LangSmith traces Gemini call -->
+  <line x1="657" y1="468" x2="799" y2="468" stroke="#7ee787" stroke-width="1" stroke-dasharray="3 2" marker-end="url(#arr-ls)"/>
+  <text x="728" y="463" text-anchor="middle" font-size="9" fill="#7ee787">trace LLM call</text>
+
+  <!-- Step 15: Gemini responds -->
+  <line x1="653" y1="488" x2="515" y2="488" stroke="#ffa657" stroke-width="1.5" stroke-dasharray="4 2" marker-end="url(#arr-agent-l)"/>
+  <text x="582" y="482" text-anchor="middle" font-size="10" fill="#7d8590">recommended: search partial rooms first</text>
+  <text x="40" y="492" text-anchor="middle" font-size="9" fill="#7d8590">⑭</text>
+
+  <!-- PHASE 6: MATCHING -->
+  <rect x="0" y="508" width="1020" height="22" fill="#21262d"/>
+  <text x="510" y="523" text-anchor="middle" font-size="10" fill="#7d8590" letter-spacing="2">PHASE 6 — ROOM MATCHING</text>
+
+  <!-- Step 16: Search partial rooms -->
+  <line x1="511" y1="550" x2="369" y2="550" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#arr-db-r)"/>
+  <text x="440" y="544" text-anchor="middle" font-size="10" fill="#58a6ff">search partial occupied rooms</text>
+  <text x="40" y="554" text-anchor="middle" font-size="9" fill="#7d8590">⑮</text>
+
+  <!-- Step 17: DB returns rooms -->
+  <line x1="369" y1="570" x2="507" y2="570" stroke="#58a6ff" stroke-width="1.5" stroke-dasharray="4 2" marker-end="url(#arr-agent-l)"/>
+  <text x="440" y="564" text-anchor="middle" font-size="10" fill="#7d8590">rooms: [101B, 203A, ...]</text>
+  <text x="40" y="574" text-anchor="middle" font-size="9" fill="#7d8590">⑯</text>
+
+  <!-- Step 18: Score compatibility -->
+  <rect x="490" y="578" width="44" height="20" rx="3" fill="rgba(188,140,255,0.15)" stroke="rgba(188,140,255,0.4)" stroke-width="1"/>
+  <text x="512" y="592" text-anchor="middle" font-size="9" fill="#bc8cff">score: 0.82</text>
+  <text x="40" y="596" text-anchor="middle" font-size="9" fill="#7d8590">⑰</text>
+
+  <!-- Step 19: LangSmith traces tool call -->
+  <line x1="511" y1="608" x2="799" y2="608" stroke="#7ee787" stroke-width="1" stroke-dasharray="3 2" marker-end="url(#arr-ls)"/>
+  <text x="655" y="603" text-anchor="middle" font-size="9" fill="#7ee787">trace tool: score_compatibility</text>
+
+  <!-- PHASE 7: ASSIGNMENT -->
+  <rect x="0" y="626" width="1020" height="22" fill="#21262d"/>
+  <text x="510" y="641" text-anchor="middle" font-size="10" fill="#7d8590" letter-spacing="2">PHASE 7 — ASSIGNMENT</text>
+
+  <!-- Step 20: Guardrails check -->
+  <rect x="490" y="656" width="44" height="20" rx="3" fill="rgba(255,107,107,0.15)" stroke="rgba(255,107,107,0.4)" stroke-width="1"/>
+  <text x="512" y="670" text-anchor="middle" font-size="9" fill="#ff6b6b">guardrails ✓</text>
+  <text x="40" y="674" text-anchor="middle" font-size="9" fill="#7d8590">⑱</text>
+
+  <!-- Step 21: Assign student -->
+  <line x1="511" y1="686" x2="369" y2="686" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#arr-db-r)"/>
+  <text x="440" y="680" text-anchor="middle" font-size="10" fill="#58a6ff">INSERT allocation record</text>
+  <text x="40" y="690" text-anchor="middle" font-size="9" fill="#7d8590">⑲</text>
+
+  <!-- Step 22: Update room + student -->
+  <line x1="511" y1="706" x2="369" y2="706" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#arr-db-r)"/>
+  <text x="440" y="700" text-anchor="middle" font-size="10" fill="#58a6ff">UPDATE room is_occupied=true</text>
+  <text x="40" y="710" text-anchor="middle" font-size="9" fill="#7d8590">⑳</text>
+
+  <!-- Step 23: Update request status -->
+  <line x1="511" y1="726" x2="369" y2="726" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#arr-db-r)"/>
+  <text x="440" y="720" text-anchor="middle" font-size="10" fill="#58a6ff">UPDATE request status=completed</text>
+  <text x="40" y="730" text-anchor="middle" font-size="9" fill="#7d8590">㉑</text>
+
+  <!-- Step 24: DB confirms -->
+  <line x1="369" y1="746" x2="507" y2="746" stroke="#58a6ff" stroke-width="1.5" stroke-dasharray="4 2" marker-end="url(#arr-agent-l)"/>
+  <text x="440" y="740" text-anchor="middle" font-size="10" fill="#7d8590">all updates confirmed</text>
+  <text x="40" y="750" text-anchor="middle" font-size="9" fill="#7d8590">㉒</text>
+
+  <!-- PHASE 8: NOTIFICATION -->
+  <rect x="0" y="766" width="1020" height="22" fill="#21262d"/>
+  <text x="510" y="781" text-anchor="middle" font-size="10" fill="#7d8590" letter-spacing="2">PHASE 8 — NOTIFICATION</text>
+
+  <!-- Step 25: Agent calls notifier -->
+  <line x1="511" y1="808" x2="945" y2="808" stroke="#ffd166" stroke-width="1.5" marker-end="url(#arr-notify)"/>
+  <text x="728" y="802" text-anchor="middle" font-size="10" fill="#ffd166">send allocation email to student</text>
+  <text x="40" y="812" text-anchor="middle" font-size="9" fill="#7d8590">㉓</text>
+
+  <!-- Step 26: Notifier confirms -->
+  <line x1="945" y1="828" x2="515" y2="828" stroke="#ffd166" stroke-width="1.5" stroke-dasharray="4 2" marker-end="url(#arr-agent-l)"/>
+  <text x="728" y="822" text-anchor="middle" font-size="10" fill="#7d8590">email sent ✓</text>
+  <text x="40" y="832" text-anchor="middle" font-size="9" fill="#7d8590">㉔</text>
+
+  <!-- PHASE 9: COMPLETION -->
+  <rect x="0" y="848" width="1020" height="22" fill="#21262d"/>
+  <text x="510" y="863" text-anchor="middle" font-size="10" fill="#7d8590" letter-spacing="2">PHASE 9 — COMPLETION</text>
+
+  <!-- Step 27: LangSmith ends trace -->
+  <line x1="511" y1="890" x2="799" y2="890" stroke="#7ee787" stroke-width="1" stroke-dasharray="3 2" marker-end="url(#arr-ls)"/>
+  <text x="655" y="884" text-anchor="middle" font-size="9" fill="#7ee787">end trace — save run summary</text>
+  <text x="40" y="894" text-anchor="middle" font-size="9" fill="#7d8590">㉕</text>
+
+  <!-- Step 28: Agent returns to FastAPI -->
+  <line x1="507" y1="910" x2="223" y2="910" stroke="#bc8cff" stroke-width="1.5" stroke-dasharray="4 2" marker-end="url(#arr-fastapi-r)"/>
+  <text x="363" y="904" text-anchor="middle" font-size="10" fill="#7d8590">run complete: 1 allocated, 0 unresolved</text>
+  <text x="40" y="914" text-anchor="middle" font-size="9" fill="#7d8590">㉖</text>
+
+  <!-- Step 29: FastAPI returns to staff -->
+  <line x1="215" y1="930" x2="77" y2="930" stroke="#3dc9b0" stroke-width="1.5" stroke-dasharray="4 2" marker-end="url(#arr-fastapi-r)"/>
+  <text x="144" y="924" text-anchor="middle" font-size="10" fill="#7d8590">200 OK — run summary</text>
+  <text x="40" y="934" text-anchor="middle" font-size="9" fill="#7d8590">㉗</text>
+
+  <!-- Student receives email note -->
+  <rect x="20" y="950" width="160" height="32" rx="6" fill="rgba(255,209,102,0.08)" stroke="rgba(255,209,102,0.3)" stroke-width="1"/>
+  <text x="100" y="963" text-anchor="middle" font-size="10" fill="#ffd166">📧 Student receives</text>
+  <text x="100" y="976" text-anchor="middle" font-size="10" fill="#ffd166">allocation email</text>
+  <text x="40" y="998" text-anchor="middle" font-size="9" fill="#7d8590">㉘</text>
+
+  <!-- ARROW MARKERS -->
+  <defs>
+    <marker id="arr-fastapi" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#3dc9b0"/>
+    </marker>
+    <marker id="arr-fastapi-r" markerWidth="8" markerHeight="8" refX="2" refY="3" orient="auto">
+      <path d="M8,0 L8,6 L0,3 z" fill="#3dc9b0"/>
+    </marker>
+    <marker id="arr-db" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#58a6ff"/>
+    </marker>
+    <marker id="arr-db-r" markerWidth="8" markerHeight="8" refX="2" refY="3" orient="auto">
+      <path d="M8,0 L8,6 L0,3 z" fill="#58a6ff"/>
+    </marker>
+    <marker id="arr-agent" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#bc8cff"/>
+    </marker>
+    <marker id="arr-agent-l" markerWidth="8" markerHeight="8" refX="2" refY="3" orient="auto">
+      <path d="M8,0 L8,6 L0,3 z" fill="#bc8cff"/>
+    </marker>
+    <marker id="arr-gemini" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#ffa657"/>
+    </marker>
+    <marker id="arr-ls" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#7ee787"/>
+    </marker>
+    <marker id="arr-notify" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#ffd166"/>
+    </marker>
+  </defs>
+
+</svg>
+
+<!-- LEGEND -->
+<div style="max-width:700px;margin:24px auto 0;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px 20px;">
+  <div style="font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;margin-bottom:12px;color:var(--text);">Reading This Diagram</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+    <div style="font-size:12px;color:var(--muted);">→ Solid arrow = request / call</div>
+    <div style="font-size:12px;color:var(--muted);">- - → Dashed arrow = response / return</div>
+    <div style="font-size:12px;color:var(--muted);">Vertical dashed line = component lifeline</div>
+    <div style="font-size:12px;color:var(--muted);">Numbered circles = step sequence</div>
+    <div style="font-size:12px;color:var(--langsmith);">Green dashed = LangSmith tracing silently</div>
+    <div style="font-size:12px;color:var(--notify);">Yellow = Email notifications to student</div>
+  </div>
+</div>
+
+</div>
+</div>
+
+</body>
+</html>
