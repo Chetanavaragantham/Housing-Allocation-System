@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Housing Allocation System — Complete Agent Architecture</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
+
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --surface2: #21262d;
+    --border: #30363d;
+    --text: #e6edf3;
+    --muted: #7d8590;
+    --client: #388bfd;
+    --fastapi: #3dc9b0;
+    --memory: #f78166;
+    --planning: #bc8cff;
+    --tools: #ffa657;
+    --guardrails: #ff6b6b;
+    --gemini: #ffd166;
+    --db: #58a6ff;
+    --langsmith: #7ee787;
+    --eval: #79c0ff;
+    --human: #e8b86d;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'IBM Plex Sans', sans-serif;
+    padding: 32px 20px;
+    min-height: 100vh;
+  }
+
+  header { text-align:center; margin-bottom:36px; }
+  .tag { font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.2em; text-transform:uppercase; color:var(--muted); margin-bottom:10px; }
+  h1 { font-family:'IBM Plex Mono',monospace; font-size:20px; font-weight:600; color:var(--text); margin-bottom:6px; }
+  .subtitle { font-size:13px; color:var(--muted); }
+
+  .arch { max-width:1100px; margin:0 auto; display:flex; flex-direction:column; align-items:center; gap:0; }
+
+  /* LAYER WRAPPER */
+  .layer { width:100%; display:flex; flex-direction:column; align-items:center; }
+  .layer-label {
+    font-family:'IBM Plex Mono',monospace; font-size:10px;
+    letter-spacing:0.15em; text-transform:uppercase;
+    color:var(--muted); margin-bottom:8px;
+    align-self:flex-start; padding-left:4px;
+  }
+  .layer-row { width:100%; display:flex; justify-content:center; gap:10px; flex-wrap:wrap; }
+
+  /* COMPONENT */
+  .comp {
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:10px; padding:14px 16px;
+    display:flex; flex-direction:column; align-items:center;
+    gap:5px; min-width:130px; position:relative;
+    transition: box-shadow 0.2s, border-color 0.2s;
+  }
+  .comp:hover { box-shadow:0 0 18px rgba(124,111,255,0.12); }
+  .comp-icon { font-size:22px; }
+  .comp-name { font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:600; text-align:center; }
+  .comp-tech { font-size:10px; color:var(--muted); text-align:center; font-family:'IBM Plex Mono',monospace; line-height:1.5; }
+  .comp-badge {
+    position:absolute; top:-8px; right:-8px;
+    font-size:9px; font-family:'IBM Plex Mono',monospace;
+    padding:2px 6px; border-radius:4px; font-weight:600;
+  }
+  .new-badge {
+    position:absolute; top:-8px; left:-8px;
+    font-size:9px; font-family:'IBM Plex Mono',monospace;
+    padding:2px 6px; border-radius:4px; font-weight:600;
+    background:rgba(255,107,107,0.2); color:#ff6b6b;
+    border:1px solid rgba(255,107,107,0.4);
+  }
+
+  /* COLOR CLASSES */
+  .c-client    { border-color:rgba(56,139,253,0.35); }   .c-client .comp-name    { color:var(--client); }
+  .c-fastapi   { border-color:rgba(61,201,176,0.35); }   .c-fastapi .comp-name   { color:var(--fastapi); }
+  .c-memory    { border-color:rgba(247,129,102,0.35); }  .c-memory .comp-name    { color:var(--memory); }
+  .c-planning  { border-color:rgba(188,140,255,0.35); }  .c-planning .comp-name  { color:var(--planning); }
+  .c-tools     { border-color:rgba(255,166,87,0.35); }   .c-tools .comp-name     { color:var(--tools); }
+  .c-guardrail { border-color:rgba(255,107,107,0.35); }  .c-guardrail .comp-name { color:var(--guardrails); }
+  .c-gemini    { border-color:rgba(255,209,102,0.35); }  .c-gemini .comp-name    { color:var(--gemini); }
+  .c-db        { border-color:rgba(88,166,255,0.35); }   .c-db .comp-name        { color:var(--db); }
+  .c-langsmith { border-color:rgba(126,231,135,0.35); }  .c-langsmith .comp-name { color:var(--langsmith); }
+  .c-eval      { border-color:rgba(121,192,255,0.35); }  .c-eval .comp-name      { color:var(--eval); }
+  .c-human     { border-color:rgba(232,184,109,0.35); }  .c-human .comp-name     { color:var(--human); }
+
+  /* ARROWS */
+  .arrow-down { display:flex; flex-direction:column; align-items:center; gap:0; margin:4px 0; }
+  .arrow-line { width:2px; height:20px; background:linear-gradient(to bottom, rgba(124,111,255,0.5), rgba(124,111,255,0.15)); }
+  .arrow-tip  { width:0; height:0; border-left:5px solid transparent; border-right:5px solid transparent; border-top:7px solid rgba(124,111,255,0.5); }
+  .arrow-label { font-family:'IBM Plex Mono',monospace; font-size:9px; color:var(--muted); letter-spacing:0.08em; margin-top:3px; }
+
+  /* BAND WRAPPERS */
+  .band {
+    width:100%; border-radius:10px; padding:14px 16px; margin:4px 0;
+  }
+  .band-label {
+    font-family:'IBM Plex Mono',monospace; font-size:10px;
+    letter-spacing:0.15em; text-transform:uppercase;
+    margin-bottom:10px; display:flex; align-items:center; gap:6px;
+  }
+  .band-inner { display:flex; justify-content:center; gap:10px; flex-wrap:wrap; }
+
+  .band-agent    { border:1px dashed rgba(188,140,255,0.3); background:rgba(188,140,255,0.03); }
+  .band-agent .band-label { color:var(--planning); }
+
+  .band-docker   { border:1px dashed rgba(88,166,255,0.3); background:rgba(88,166,255,0.03); }
+  .band-docker .band-label { color:var(--db); }
+
+  .band-obs      { border:1px dashed rgba(126,231,135,0.3); background:rgba(126,231,135,0.03); }
+  .band-obs .band-label { color:var(--langsmith); }
+
+  .band-eval     { border:1px dashed rgba(121,192,255,0.3); background:rgba(121,192,255,0.03); }
+  .band-eval .band-label { color:var(--eval); }
+
+  .band-human    { border:1px dashed rgba(232,184,109,0.3); background:rgba(232,184,109,0.03); }
+  .band-human .band-label { color:var(--human); }
+
+  /* LEGEND */
+  .legend {
+    display:flex; justify-content:center; gap:16px;
+    margin-bottom:28px; flex-wrap:wrap;
+  }
+  .legend-item { display:flex; align-items:center; gap:6px; font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--muted); }
+  .legend-dot  { width:8px; height:8px; border-radius:2px; flex-shrink:0; }
+  .legend-new  { background:rgba(255,107,107,0.2); color:#ff6b6b; border:1px solid rgba(255,107,107,0.4); padding:1px 5px; border-radius:3px; font-size:9px; font-family:'IBM Plex Mono',monospace; }
+
+  /* FLOW TABLE */
+  .flow-table {
+    max-width:900px; margin:28px auto 0;
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:10px; overflow:hidden;
+  }
+  .flow-table-header {
+    padding:14px 20px; font-family:'IBM Plex Mono',monospace;
+    font-size:13px; font-weight:600;
+    border-bottom:1px solid var(--border);
+    background:var(--surface2);
+  }
+  .flow-row {
+    display:grid; grid-template-columns:32px 160px 1fr;
+    gap:12px; padding:10px 20px;
+    border-bottom:1px solid rgba(48,54,61,0.5);
+    align-items:start;
+  }
+  .flow-row:last-child { border-bottom:none; }
+  .flow-n { font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--planning); font-weight:600; padding-top:2px; }
+  .flow-component { font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:600; padding-top:2px; }
+  .flow-desc { font-size:12px; color:var(--muted); line-height:1.6; }
+  .flow-desc strong { color:var(--text); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="tag">Agent Engineering Architecture · v2.0 — Complete</div>
+  <h1>Housing Allocation System</h1>
+  <p class="subtitle">Full AI Agent Lifecycle — All 10 Components</p>
+</header>
+
+<div class="legend">
+  <div class="legend-item"><div class="legend-dot" style="background:#3dc9b0"></div>Existing</div>
+  <div class="legend-item"><span class="legend-new">NEW</span> Added after audit</div>
+</div>
+
+<div class="arch">
+
+  <!-- L1: CLIENTS -->
+  <div class="layer">
+    <div class="layer-label">1 — Input Layer · Clients</div>
+    <div class="layer-row">
+      <div class="comp c-client"><div class="comp-icon">💻</div><div class="comp-name">Web Browser</div><div class="comp-tech">Laptop / Desktop</div></div>
+      <div class="comp c-client"><div class="comp-icon">📱</div><div class="comp-name">Mobile</div><div class="comp-tech">iOS / Android</div></div>
+      <div class="comp c-client"><div class="comp-icon">⚙️</div><div class="comp-name">Admin Panel</div><div class="comp-tech">Housing Staff</div></div>
+    </div>
+  </div>
+
+  <div class="arrow-down"><div class="arrow-line"></div><div class="arrow-tip"></div><div class="arrow-label">HTTP Requests</div></div>
+
+  <!-- L2: FASTAPI -->
+  <div class="layer">
+    <div class="layer-label">2 — API Gateway</div>
+    <div class="layer-row">
+      <div class="comp c-fastapi" style="min-width:340px;">
+        <div class="comp-badge" style="background:rgba(61,201,176,0.15);color:#3dc9b0;border:1px solid rgba(61,201,176,0.35);">PORT 8000</div>
+        <div class="comp-icon">🚀</div>
+        <div class="comp-name">FastAPI</div>
+        <div class="comp-tech">REST API · Pydantic Validation · Auto Swagger Docs · Async · Auth</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="arrow-down"><div class="arrow-line"></div><div class="arrow-tip"></div><div class="arrow-label">Validated Payload</div></div>
+
+  <!-- L3: AGENT BAND -->
+  <div class="layer" style="width:100%">
+    <div class="layer-label">3 — Agent Core (LangGraph)</div>
+    <div class="band band-agent" style="width:100%">
+      <div class="band-label">🧠 LangGraph State Machine — Agent Lifecycle</div>
+      <div class="band-inner">
+
+        <!-- MEMORY -->
+        <div class="comp c-memory">
+          <div class="new-badge">NEW</div>
+          <div class="comp-icon">💾</div>
+          <div class="comp-name">Memory</div>
+          <div class="comp-tech">Short-term: LangGraph State<br>Long-term: PostgreSQL<br>Episodic: LangSmith Traces</div>
+        </div>
+
+        <!-- PLANNING -->
+        <div class="comp c-planning">
+          <div class="new-badge">NEW</div>
+          <div class="comp-icon">📋</div>
+          <div class="comp-name">Planning</div>
+          <div class="comp-tech">ReAct Strategy<br>Reason → Act → Observe<br>→ Repeat</div>
+        </div>
+
+        <!-- GUARDRAILS -->
+        <div class="comp c-guardrail">
+          <div class="new-badge">NEW</div>
+          <div class="comp-icon">🛡️</div>
+          <div class="comp-name">Guardrails</div>
+          <div class="comp-tech">No occupied rooms<br>No unready rooms<br>Max 3 retries<br>3-day buffer rule</div>
+        </div>
+
+        <!-- OBSERVATION LOOP -->
+        <div class="comp c-planning">
+          <div class="new-badge">NEW</div>
+          <div class="comp-icon">🔄</div>
+          <div class="comp-name">Observation Loop</div>
+          <div class="comp-tech">Action result → Decide<br>next step → Loop until<br>resolved or max attempts</div>
+        </div>
+
+        <!-- GEMINI -->
+        <div class="comp c-gemini">
+          <div class="comp-icon">✨</div>
+          <div class="comp-name">Gemini API</div>
+          <div class="comp-tech">gemini-pro<br>Reasoning Engine<br>Decision Making</div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <div class="arrow-down"><div class="arrow-line"></div><div class="arrow-tip"></div><div class="arrow-label">Tool Calls</div></div>
+
+  <!-- L4: TOOLS -->
+  <div class="layer">
+    <div class="layer-label">4 — Agent Tools</div>
+    <div class="layer-row">
+      <div class="comp c-tools"><div class="comp-icon">🔍</div><div class="comp-name">search_rooms</div><div class="comp-tech">Find available<br>rent-ready rooms</div></div>
+      <div class="comp c-tools"><div class="comp-icon">📊</div><div class="comp-name">score_compatibility</div><div class="comp-tech">Calculate match<br>score 0.0–1.0</div></div>
+      <div class="comp c-tools"><div class="comp-icon">✅</div><div class="comp-name">assign_student</div><div class="comp-tech">Write allocation<br>to database</div></div>
+      <div class="comp c-tools"><div class="comp-icon">🔁</div><div class="comp-name">reallocate</div><div class="comp-tech">Retry with new<br>room on failure</div></div>
+      <div class="comp c-tools"><div class="comp-icon">👥</div><div class="comp-name">check_group</div><div class="comp-tech">Validate mutual<br>roommate requests</div></div>
+    </div>
+  </div>
+
+  <div class="arrow-down"><div class="arrow-line"></div><div class="arrow-tip"></div><div class="arrow-label">SQL Queries</div></div>
+
+  <!-- L5: DATA LAYER -->
+  <div class="layer" style="width:100%">
+    <div class="band band-docker" style="width:100%">
+      <div class="band-label">🐳 Docker Compose — Data Layer</div>
+      <div class="band-inner">
+        <div class="comp c-db">
+          <div class="comp-badge" style="background:rgba(88,166,255,0.15);color:#58a6ff;border:1px solid rgba(88,166,255,0.35);">PORT 5432</div>
+          <div class="comp-icon">🐘</div>
+          <div class="comp-name">PostgreSQL 15</div>
+          <div class="comp-tech">housing_db · 5 Tables<br>Alembic Migrations</div>
+        </div>
+        <div class="comp c-fastapi">
+          <div class="comp-icon">🔌</div>
+          <div class="comp-name">SQLAlchemy</div>
+          <div class="comp-tech">ORM · Connection Pool<br>psycopg2 Driver</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="arrow-down"><div class="arrow-line"></div><div class="arrow-tip"></div><div class="arrow-label">Allocation Results</div></div>
+
+  <!-- L6: EVALUATION -->
+  <div class="layer" style="width:100%">
+    <div class="band band-eval" style="width:100%">
+      <div class="band-label">📊 NEW — Evaluation Layer (Post-Run)</div>
+      <div class="band-inner">
+        <div class="comp c-eval">
+          <div class="new-badge">NEW</div>
+          <div class="comp-icon">📈</div>
+          <div class="comp-name">Allocation Metrics</div>
+          <div class="comp-tech">% placed · avg score<br>reallocation rate</div>
+        </div>
+        <div class="comp c-eval">
+          <div class="new-badge">NEW</div>
+          <div class="comp-icon">🎯</div>
+          <div class="comp-name">Ground Truth Eval</div>
+          <div class="comp-tech">Agent decisions vs<br>expected outcomes</div>
+        </div>
+        <div class="comp c-eval">
+          <div class="new-badge">NEW</div>
+          <div class="comp-icon">📋</div>
+          <div class="comp-name">Allocation Report</div>
+          <div class="comp-tech">Final report per<br>intake period</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="arrow-down"><div class="arrow-line"></div><div class="arrow-tip"></div><div class="arrow-label">Unresolved Cases</div></div>
+
+  <!-- L7: HUMAN IN THE LOOP -->
+  <div class="layer" style="width:100%">
+    <div class="band band-human" style="width:100%">
+      <div class="band-label">👤 NEW — Human in the Loop</div>
+      <div class="band-inner">
+        <div class="comp c-human">
+          <div class="new-badge">NEW</div>
+          <div class="comp-icon">🏠</div>
+          <div class="comp-name">Housing Officer</div>
+          <div class="comp-tech">Reviews unresolved<br>cases manually</div>
+        </div>
+        <div class="comp c-human">
+          <div class="new-badge">NEW</div>
+          <div class="comp-icon">🚨</div>
+          <div class="comp-name">Unresolved Queue</div>
+          <div class="comp-tech">Students flagged after<br>3 failed attempts</div>
+        </div>
+        <div class="comp c-human">
+          <div class="new-badge">NEW</div>
+          <div class="comp-icon">✍️</div>
+          <div class="comp-name">Manual Override</div>
+          <div class="comp-tech">Officer assigns room<br>bypassing agent</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- OBSERVABILITY BAND - SPANS EVERYTHING -->
+  <div class="layer" style="width:100%; margin-top:12px;">
+    <div class="band band-obs" style="width:100%;">
+      <div class="band-label">🔍 Observability — Watches All Layers</div>
+      <div class="band-inner">
+        <div class="comp c-langsmith">
+          <div class="comp-icon">🔍</div>
+          <div class="comp-name">LangSmith</div>
+          <div class="comp-tech">Traces every agent step<br>Tool calls · LLM calls<br>Replay + Debug</div>
+        </div>
+        <div class="comp c-langsmith">
+          <div class="comp-icon">📝</div>
+          <div class="comp-name">Structured Logging</div>
+          <div class="comp-tech">JSON logs · Every<br>decision recorded<br>with reason</div>
+        </div>
+        <div class="comp c-langsmith">
+          <div class="comp-icon">⚡</div>
+          <div class="comp-name">GitHub Actions CI</div>
+          <div class="comp-tech">Auto-run tests<br>on every push<br>to main</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FLOW TABLE -->
+  <div class="flow-table">
+    <div class="flow-table-header">📍 Complete Agent Lifecycle — Step by Step</div>
+    <div class="flow-row"><span class="flow-n">01</span><span class="flow-component" style="color:var(--client)">Client</span><div class="flow-desc">Student submits housing application from any device</div></div>
+    <div class="flow-row"><span class="flow-n">02</span><span class="flow-component" style="color:var(--fastapi)">FastAPI</span><div class="flow-desc">Validates request via Pydantic · stores in PostgreSQL · triggers agent</div></div>
+    <div class="flow-row"><span class="flow-n">03</span><span class="flow-component" style="color:var(--memory)">Memory</span><div class="flow-desc">LangGraph initialises state object with student data · previous run history loaded from DB</div></div>
+    <div class="flow-row"><span class="flow-n">04</span><span class="flow-component" style="color:var(--planning)">Planning</span><div class="flow-desc">ReAct loop begins · agent reasons about what to do first based on request type</div></div>
+    <div class="flow-row"><span class="flow-n">05</span><span class="flow-component" style="color:var(--gemini)">Gemini</span><div class="flow-desc">Agent calls Gemini with student profile + available rooms · Gemini reasons and recommends action</div></div>
+    <div class="flow-row"><span class="flow-n">06</span><span class="flow-component" style="color:var(--guardrails)">Guardrails</span><div class="flow-desc">Before any tool executes · guardrails validate the proposed action against all business rules</div></div>
+    <div class="flow-row"><span class="flow-n">07</span><span class="flow-component" style="color:var(--tools)">Tools</span><div class="flow-desc">check_group → search_rooms → score_compatibility → assign_student · writes to PostgreSQL</div></div>
+    <div class="flow-row"><span class="flow-n">08</span><span class="flow-component" style="color:var(--planning)">Observation</span><div class="flow-desc">Agent observes result · if success → next student · if failure → reallocation loop · max 3 attempts</div></div>
+    <div class="flow-row"><span class="flow-n">09</span><span class="flow-component" style="color:var(--langsmith)">LangSmith</span><div class="flow-desc">Every step traced in real time · full replay available · anomalies flagged</div></div>
+    <div class="flow-row"><span class="flow-n">10</span><span class="flow-component" style="color:var(--eval)">Evaluation</span><div class="flow-desc">Post-run metrics calculated · allocation rate · avg compatibility · reallocation rate</div></div>
+    <div class="flow-row"><span class="flow-n">11</span><span class="flow-component" style="color:var(--human)">Human Loop</span><div class="flow-desc">Unresolved students flagged → housing officer queue → manual override → case closed</div></div>
+  </div>
+
+</div>
+
+</body>
+</html>
