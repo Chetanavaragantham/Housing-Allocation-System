@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Housing Allocation System — Agent Flow</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
+
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --surface2: #21262d;
+    --border: #30363d;
+    --text: #e6edf3;
+    --muted: #7d8590;
+    --start:    #7ee787;
+    --end:      #f78166;
+    --process:  #388bfd;
+    --decision: #ffa657;
+    --action:   #bc8cff;
+    --notify:   #3dc9b0;
+    --hold:     #ffd166;
+    --human:    #e8b86d;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'IBM Plex Sans', sans-serif;
+    padding: 32px 20px;
+  }
+
+  header { text-align:center; margin-bottom:32px; }
+  .tag { font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.2em; text-transform:uppercase; color:var(--muted); margin-bottom:10px; }
+  h1 { font-family:'IBM Plex Mono',monospace; font-size:20px; font-weight:600; margin-bottom:6px; }
+  .subtitle { font-size:13px; color:var(--muted); }
+
+  /* LEGEND */
+  .legend {
+    display:flex; justify-content:center; gap:16px;
+    margin-bottom:32px; flex-wrap:wrap;
+  }
+  .legend-item { display:flex; align-items:center; gap:7px; font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--muted); }
+  .legend-shape { width:14px; height:14px; flex-shrink:0; }
+  .l-start    { background:var(--start);    border-radius:50%; }
+  .l-end      { background:var(--end);      border-radius:50%; }
+  .l-process  { background:rgba(56,139,253,0.2); border:1px solid var(--process); border-radius:4px; }
+  .l-decision { background:rgba(255,166,87,0.2); border:1px solid var(--decision); transform:rotate(45deg); border-radius:2px; }
+  .l-action   { background:rgba(188,140,255,0.2); border:1px solid var(--action); border-radius:4px; }
+  .l-notify   { background:rgba(61,201,176,0.2); border:1px solid var(--notify); border-radius:4px; }
+  .l-hold     { background:rgba(255,209,102,0.2); border:1px solid var(--hold); border-radius:4px; }
+  .l-human    { background:rgba(232,184,109,0.2); border:1px solid var(--human); border-radius:4px; }
+
+  /* FLOW CANVAS */
+  .flow { max-width:800px; margin:0 auto; display:flex; flex-direction:column; align-items:center; gap:0; }
+
+  /* NODES */
+  .node-start, .node-end {
+    width:140px; height:44px; border-radius:22px;
+    display:flex; align-items:center; justify-content:center;
+    font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600;
+    letter-spacing:0.05em;
+  }
+  .node-start { background:rgba(126,231,135,0.15); border:2px solid var(--start); color:var(--start); }
+  .node-end   { background:rgba(247,129,102,0.15); border:2px solid var(--end);   color:var(--end); }
+
+  .node-process {
+    width:320px; min-height:44px; border-radius:8px;
+    display:flex; align-items:center; justify-content:center;
+    font-family:'IBM Plex Mono',monospace; font-size:11px;
+    text-align:center; padding:10px 16px; line-height:1.5;
+    background:rgba(56,139,253,0.08); border:1px solid rgba(56,139,253,0.4);
+    color:#79c0ff;
+  }
+
+  .node-decision {
+    width:280px; min-height:56px; border-radius:8px;
+    display:flex; align-items:center; justify-content:center;
+    font-family:'IBM Plex Mono',monospace; font-size:11px;
+    text-align:center; padding:10px 16px; line-height:1.5;
+    background:rgba(255,166,87,0.08); border:1px solid rgba(255,166,87,0.5);
+    color:var(--decision); position:relative;
+  }
+  .node-decision::before {
+    content:'?';
+    position:absolute; top:-10px; right:-10px;
+    width:20px; height:20px; border-radius:50%;
+    background:var(--decision); color:var(--bg);
+    font-size:11px; font-weight:700;
+    display:flex; align-items:center; justify-content:center;
+  }
+
+  .node-action {
+    width:320px; min-height:44px; border-radius:8px;
+    display:flex; align-items:center; justify-content:center;
+    font-family:'IBM Plex Mono',monospace; font-size:11px;
+    text-align:center; padding:10px 16px; line-height:1.5;
+    background:rgba(188,140,255,0.08); border:1px solid rgba(188,140,255,0.4);
+    color:#bc8cff;
+  }
+
+  .node-notify {
+    width:320px; min-height:44px; border-radius:8px;
+    display:flex; align-items:center; justify-content:center;
+    font-family:'IBM Plex Mono',monospace; font-size:11px;
+    text-align:center; padding:10px 16px; line-height:1.5;
+    background:rgba(61,201,176,0.08); border:1px solid rgba(61,201,176,0.4);
+    color:var(--notify);
+  }
+
+  .node-hold {
+    width:320px; min-height:44px; border-radius:8px;
+    display:flex; align-items:center; justify-content:center;
+    font-family:'IBM Plex Mono',monospace; font-size:11px;
+    text-align:center; padding:10px 16px; line-height:1.5;
+    background:rgba(255,209,102,0.08); border:1px solid rgba(255,209,102,0.4);
+    color:var(--hold);
+  }
+
+  .node-human {
+    width:320px; min-height:44px; border-radius:8px;
+    display:flex; align-items:center; justify-content:center;
+    font-family:'IBM Plex Mono',monospace; font-size:11px;
+    text-align:center; padding:10px 16px; line-height:1.5;
+    background:rgba(232,184,109,0.08); border:1px solid rgba(232,184,109,0.4);
+    color:var(--human);
+  }
+
+  /* ARROWS */
+  .arrow { display:flex; flex-direction:column; align-items:center; margin:2px 0; }
+  .arrow-line { width:2px; height:20px; background:rgba(124,111,255,0.4); }
+  .arrow-tip  { width:0; height:0; border-left:5px solid transparent; border-right:5px solid transparent; border-top:7px solid rgba(124,111,255,0.4); }
+  .arrow-label { font-family:'IBM Plex Mono',monospace; font-size:9px; color:var(--muted); margin-top:2px; letter-spacing:0.08em; }
+
+  /* BRANCH ROW */
+  .branch-row {
+    display:flex; align-items:flex-start;
+    gap:20px; width:100%; justify-content:center;
+    margin:2px 0;
+  }
+
+  .branch {
+    display:flex; flex-direction:column; align-items:center; gap:0;
+    flex:1; max-width:340px;
+  }
+
+  .branch-label {
+    font-family:'IBM Plex Mono',monospace; font-size:10px;
+    padding:3px 10px; border-radius:10px; margin-bottom:4px;
+    font-weight:600; letter-spacing:0.05em;
+  }
+  .yes { background:rgba(126,231,135,0.15); color:var(--start); border:1px solid rgba(126,231,135,0.3); }
+  .no  { background:rgba(247,129,102,0.15); color:var(--end);   border:1px solid rgba(247,129,102,0.3); }
+  .hold-label { background:rgba(255,209,102,0.15); color:var(--hold); border:1px solid rgba(255,209,102,0.3); }
+
+  /* SECTION DIVIDER */
+  .section-divider {
+    width:100%; display:flex; align-items:center; gap:10px; margin:12px 0;
+  }
+  .divider-line { flex:1; height:1px; background:var(--border); }
+  .divider-label {
+    font-family:'IBM Plex Mono',monospace; font-size:10px;
+    letter-spacing:0.15em; text-transform:uppercase; color:var(--muted);
+    white-space:nowrap;
+  }
+
+  /* LOOP INDICATOR */
+  .loop-note {
+    font-family:'IBM Plex Mono',monospace; font-size:10px;
+    color:var(--muted); background:var(--surface2);
+    border:1px dashed var(--border); border-radius:6px;
+    padding:6px 14px; margin:4px 0; text-align:center;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="tag">Agent Flow Diagram · v1.0</div>
+  <h1>Housing Allocation Agent</h1>
+  <p class="subtitle">Complete decision flow — from queue to allocation</p>
+</header>
+
+<div class="legend">
+  <div class="legend-item"><div class="legend-shape l-start"></div>Start / End</div>
+  <div class="legend-item"><div class="legend-shape l-process"></div>Process</div>
+  <div class="legend-item"><div class="legend-shape l-decision"></div>Decision</div>
+  <div class="legend-item"><div class="legend-shape l-action"></div>Action</div>
+  <div class="legend-item"><div class="legend-shape l-notify"></div>Notify Student</div>
+  <div class="legend-item"><div class="legend-shape l-hold"></div>Hold Request</div>
+  <div class="legend-item"><div class="legend-shape l-human"></div>Human in Loop</div>
+</div>
+
+<div class="flow">
+
+  <!-- START -->
+  <div class="node-start">AGENT START</div>
+  <div class="arrow"><div class="arrow-line"></div><div class="arrow-tip"></div></div>
+
+  <!-- HOUSEKEEPING -->
+  <div class="section-divider"><div class="divider-line"></div><div class="divider-label">Phase 1 — Housekeeping</div><div class="divider-line"></div></div>
+
+  <div class="node-process">Mark cancelled requests → status: cancelled</div>
+  <div class="arrow"><div class="arrow-line"></div><div class="arrow-tip"></div></div>
+
+  <div class="node-process">Check held requests — has 3-day buffer passed?<br>If YES → move back to pending queue</div>
+  <div class="arrow"><div class="arrow-line"></div><div class="arrow-tip"></div></div>
+
+  <div class="node-process">Check held group requests — have all roommates submitted?<br>If YES → move group back to pending queue</div>
+  <div class="arrow"><div class="arrow-line"></div><div class="arrow-tip"></div></div>
+
+  <div class="node-process">Load queue: unresolved first → then pending by submitted_at</div>
+  <div class="arrow"><div class="arrow-line"></div><div class="arrow-tip"></div></div>
+
+  <!-- QUEUE CHECK -->
+  <div class="section-divider"><div class="divider-line"></div><div class="divider-label">Phase 2 — Queue Processing</div><div class="divider-line"></div></div>
+
+  <div class="node-decision">Any requests left in queue?</div>
+  <div class="arrow"><div class="arrow-line"></div><div class="arrow-tip"></div></div>
+
+  <div class="branch-row">
+    <div class="branch">
+      <span class="branch-label no">NO</span>
+      <div class="arrow"><div class="arrow-line"></div><div class="arrow-tip"></div></div>
+      <div class="node-action">Generate metrics report<br>Save allocation summary</div>
+      <div class="arrow"><div class="arrow-line"></div><div class="arrow-tip"></div></div>
+      <div class="node-start" style="width:160px;">AGENT END</div>
+    </div>
+    <div class="branch">
+      <span class="branch-label yes">YES</span>
+      <div class="arrow"><div class="arrow-line"></div><div class="arrow-tip"></div></div>
+      <div class="node-process">Pick next request from queue</div>
+    </div>
+  </div>
+
+  <div class="arrow"><div class="arrow-line"></div><div class="arrow-tip"></div></div>
+
+  <!-- REQUEST TYPE CHECK -->
+  <div class="section-divider"><div class="divider-line"></div><div class="divider-label">Phase 3 — Request Type Check</div><div class="divider-line"></div></div>
+
+  <div class="node-decision">Is this a room_change request?</div>
+  <div class="arrow"><div class="arrow-line"></div><div class="arrow-tip"></div></div>
+
+  <div class="branch-row">
+    <div class="branch">
+      <span class="branch-label yes">YES</span>
+      <div class="arrow"><div class="arrow-line"></div><div class="arrow-tip"></div></div>
+      <div class="node-decision">Has 3 days passed since<br>initial allocation?</div>
+      <div class="arrow"><div class="arrow-line"></div><div class="arrow-tip"></div></div>
+      <div class="branch-row">
+        <div class="branch">
+          <span class="branch-label no">NO — Too Early</span>
+          <div class="arrow"><div class="arrow-line"></div><div class="arrow-tip"></div></div>
+          <div class="node-hold">Keep in queue<br>Check again tomorrow</div>
+          <div class="arrow"><div class="arrow-line"></div><div class="arrow-tip"></div></div>
+          <div class="node-notify">📧 Email student:<br>"Too early — will process after 3 days"</div>
+          <div class="loop-note">↩ Back to queue check</div>
+        </div>
+        <div class="branch">
+          <span class="branch-label yes">YES</span>
+          <div class="arrow"><div class="arrow-line"></div><div class="arrow-tip"></div></div>
+          <div class="node-process">Continue to<br>roommate check ↓</div>
+        </div>
+      </div>
+    </div>
+    <div class="branch">
+      <span class="branch-label no">NO — Application</span>
+      <div class="arrow"><div class="arrow-line"></div><div class="arrow-tip"></div></div>
+      <div class="node-process">Continue to<br>roommate check ↓</div>
+    </div>
+  </div>
+
+  <div class="arrow"><div class="arrow-line"></div><div class="arrow-tip"></div></div>
+
+  <!-- ROOMMATE CHECK -->
+  <div class="section-divider"><div class="divider-line"></div><div class="divider-label">Phase 4 — Roommate Request Check</div><div class="divider-line"></div></div>
+
+  <div class="node-decision">Does student have requested roommates?</div>
+  <div class="arrow"><div class="arrow-line"></div><div class="arrow-tip"></div></div>
+
+  <div class="branch-row">
+    <div class="branch">
+      <span class="branch-label no">NO</span>
+      <div class="arrow"><div class="arrow-line"></div><div class="arrow-tip"></div></div>
+      <div class="node-process">Go to individual matching ↓</div>
+    </div>
+    <div class="branch">
+      <span class="branch-label yes">YES</span>
+      <div class="arrow"><div class="arrow-line"></div><div class="arrow-tip"></div></div>
+      <div class="node-decision">Have ALL requested roommates<br>submitted matching requests?</div>
+      <div class="arrow"><div class="arrow-line"></div><div class="arrow-tip"></div></div>
+      <div class="branch-row">
+        <div class="branch">
+          <span class="branch-label no">NO — Incomplete Group</span>
+          <div class="arrow"><div class="arrow-line"></div><div class="arrow-tip"></div></div>
+          <div class="node-hold">Put request ON HOLD<br>Check daily for missing submissions</div>
+          <div class="arrow"><div class="arrow-line"></div><div class="arrow-tip"></div></div>
+          <div class="node-notify">📧 Email student:<br>"Waiting for roommates to submit.<br>Will process once all submit."</div>
+          <div class="loop-note">↩ Back to queue check</div>
+        </div>
+        <div class="branch">
+          <span class="branch-label yes">YES — Full Group</span>
+          <div class="arrow"><div class="arrow-line"></div><div class="arrow-tip"></div></div>
+          <div class="node-decision">Is apartment available with<br>enough empty rooms for group?</div>
+          <div class="arrow"><div class="arrow-line"></div><div class="arrow-tip"></div></div>
+          <div class="branch-row">
+            <div class="branch">
+              <span class="branch-label no">NO</span>
+              <div class="arrow"><div class="arrow-line"></div><div class="arrow-tip"></div></div>
+              <div class="node-hold">Keep group request on file<br>Check daily for availability</div>
+              <div class="arrow"><div class="arrow-line"></div><div class="arrow-tip"></div></div>
+              <div class="node-notify">📧 Email all students:<br>"No apartment available now.<br>Will notify when one opens."</div>
+              <div class="loop-note">↩ Back to queue check</div>
+            </div>
+            <div class="branch">
+              <span class="branch-label yes">YES</span>
+              <div class="arrow"><div class="arrow-line"></div><div class="arrow-tip"></div></div>
+              <div class="node-action">Assign all group members<br>to apartment rooms</div>
+              <div class="arrow"><div class="arrow-line"></div><div class="arrow-tip"></div></div>
+              <div class="node-action">Update DB: is_occupied, is_allocated<br>request status → completed</div>
+              <div class="arrow"><div class="arrow-line"></div><div class="arrow-tip"></div></div>
+              <div class="node-notify">📧 Email all students:<br>"You have been allocated!"</div>
+              <div class="loop-note">↩ Back to queue check</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="arrow"><div class="arrow-line"></div><div class="arrow-tip"></div></div>
+
+  <!-- INDIVIDUAL MATCHING -->
+  <div class="section-divider"><div class="divider-line"></div><div class="divider-label">Phase 5 — Individual Matching</div><div class="divider-line"></div></div>
+
+  <div class="node-decision">Is there a partially occupied<br>rent-ready room available?</div>
+  <div class="arrow"><div class="arrow-line"></div><div class="arrow-tip"></div></div>
+
+  <div class="branch-row">
+    <div class="branch">
+      <span class="branch-label yes">YES</span>
+      <div class="arrow"><div class="arrow-line"></div><div class="arrow-tip"></div></div>
+      <div class="node-decision">Compatibility score ≥ 0.65<br>with existing resident?</div>
+      <div class="arrow"><div class="arrow-line"></div><div class="arrow-tip"></div></div>
+      <div class="branch-row">
+        <div class="branch">
+          <span class="branch-label yes">YES</span>
+          <div class="arrow"><div class="arrow-line"></div><div class="arrow-tip"></div></div>
+          <div class="node-action">Assign student to apartment room</div>
+          <div class="arrow"><div class="arrow-line"></div><div class="arrow-tip"></div></div>
+          <div class="node-action">Update DB: is_occupied, is_allocated<br>request status → completed<br>log compatibility score</div>
+          <div class="arrow"><div class="arrow-line"></div><div class="arrow-tip"></div></div>
+          <div class="node-notify">📧 Email student: "Allocated!"</div>
+          <div class="loop-note">↩ Back to queue check</div>
+        </div>
+        <div class="branch">
+          <span class="branch-label no">NO — Low Score</span>
+          <div class="arrow"><div class="arrow-line"></div><div class="arrow-tip"></div></div>
+          <div class="node-process">Try next partial room<br>Increment attempt counter</div>
+          <div class="loop-note">↩ Loop back</div>
+        </div>
+      </div>
+    </div>
+    <div class="branch">
+      <span class="branch-label no">NO — No Partial Room</span>
+      <div class="arrow"><div class="arrow-line"></div><div class="arrow-tip"></div></div>
+      <div class="node-decision">Is there an empty<br>rent-ready room available?</div>
+      <div class="arrow"><div class="arrow-line"></div><div class="arrow-tip"></div></div>
+      <div class="branch-row">
+        <div class="branch">
+          <span class="branch-label yes">YES</span>
+          <div class="arrow"><div class="arrow-line"></div><div class="arrow-tip"></div></div>
+          <div class="node-action">Assign student to empty room</div>
+          <div class="arrow"><div class="arrow-line"></div><div class="arrow-tip"></div></div>
+          <div class="node-action">Update DB: is_occupied, is_allocated<br>request status → completed</div>
+          <div class="arrow"><div class="arrow-line"></div><div class="arrow-tip"></div></div>
+          <div class="node-notify">📧 Email student: "Allocated!"</div>
+          <div class="loop-note">↩ Back to queue check</div>
+        </div>
+        <div class="branch">
+          <span class="branch-label no">NO</span>
+          <div class="arrow"><div class="arrow-line"></div><div class="arrow-tip"></div></div>
+          <div class="node-decision">Attempts &lt; 3?</div>
+          <div class="arrow"><div class="arrow-line"></div><div class="arrow-tip"></div></div>
+          <div class="branch-row">
+            <div class="branch">
+              <span class="branch-label yes">YES</span>
+              <div class="loop-note">↩ Loop back to Phase 5</div>
+            </div>
+            <div class="branch">
+              <span class="branch-label no">NO — Max Attempts</span>
+              <div class="arrow"><div class="arrow-line"></div><div class="arrow-tip"></div></div>
+              <div class="node-human">🚨 Flag as UNRESOLVED<br>Add to human review queue</div>
+              <div class="arrow"><div class="arrow-line"></div><div class="arrow-tip"></div></div>
+              <div class="node-notify">📧 Email student:<br>"We could not place you.<br>A housing officer will contact you."</div>
+              <div class="loop-note">↩ Back to queue check</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>
