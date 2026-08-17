@@ -1,0 +1,52 @@
+name: CI — Housing Allocation System
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: housing_admin
+          POSTGRES_PASSWORD: housing123
+          POSTGRES_DB: housing_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Create test database
+        env:
+          PGPASSWORD: housing123
+        run: |
+          psql -h localhost -U housing_admin -d housing_db -c "CREATE DATABASE housing_test_db;"
+
+      - name: Run tests
+        env:
+          POSTGRES_USER: housing_admin
+          POSTGRES_PASSWORD: housing123
+          POSTGRES_DB: housing_db
+          SECRET_KEY: test-secret-key
+        run: pytest tests/ -v --cov=. --cov-report=term-missing
