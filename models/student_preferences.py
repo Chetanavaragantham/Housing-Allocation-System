@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime, Enum, ForeignKey
+from sqlalchemy import Column, Integer, DateTime, Enum, ForeignKey
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from db.database import Base
@@ -32,8 +32,8 @@ class StudentPreference(Base):
     requested_roommate_3 = Column(Integer, ForeignKey("students.id"), nullable=True)
 
     sleep_schedule  = Column(Enum(SleepSchedule), nullable=False)
-    noise_tolerance = Column(Integer, nullable=False)  # 1–5
-    cleanliness     = Column(Integer, nullable=False)  # 1–5
+    noise_tolerance = Column(Integer, nullable=False)
+    cleanliness     = Column(Integer, nullable=False)
     study_habits    = Column(Enum(StudyHabits), nullable=False)
     diet            = Column(Enum(Diet), nullable=True)
 
@@ -41,4 +41,8 @@ class StudentPreference(Base):
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
     # Relationships
-    student = relationship("Student", foreign_keys=[student_id], back_populates="preferences")
+    student = relationship(
+        "Student",
+        foreign_keys=[student_id],
+        back_populates="preference"
+    )
