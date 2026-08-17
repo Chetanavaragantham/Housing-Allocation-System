@@ -1,3 +1,12 @@
+import os
+from dotenv import load_dotenv
+load_dotenv()
+
+# LangSmith tracing — reads from .env automatically
+os.environ["LANGCHAIN_TRACING_V2"]  = os.getenv("LANGSMITH_TRACING", "false")
+os.environ["LANGCHAIN_API_KEY"]      = os.getenv("LANGSMITH_API_KEY", "")
+os.environ["LANGCHAIN_PROJECT"]      = os.getenv("LANGSMITH_PROJECT", "housing-allocation-system")
+os.environ["LANGCHAIN_ENDPOINT"]     = os.getenv("LANGSMITH_ENDPOINT", "https://api.smith.langchain.com")
 from langgraph.graph import StateGraph, END
 from agent.state import HousingAgentState
 from agent.nodes import (
