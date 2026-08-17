@@ -14,7 +14,7 @@ from datetime import datetime, timedelta
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 # Password hashing
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+pwd_context = CryptContext(schemes=["sha256_crypt"], deprecated="auto")
 
 # JWT settings
 SECRET_KEY  = os.getenv("SECRET_KEY", "your-secret-key-change-in-production")
